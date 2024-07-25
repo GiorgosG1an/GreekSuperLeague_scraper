@@ -23,7 +23,7 @@ STATISTICS_URL = f"{SL_BASE_URL}statistics/"
 SCHEDULE_URL = f"{SL_BASE_URL}schedule/"
 
 # folder to save the data
-DATA_FOLDER = "SuperLeauge_Data"
+DATA_FOLDER = "SuperLeague_Data"
 os.makedirs(DATA_FOLDER, exist_ok=True)
 
 
