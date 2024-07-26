@@ -26,8 +26,6 @@ SCHEDULE_URL = f"{SL_BASE_URL}schedule/"
 DATA_FOLDER = "SuperLeague_Data"
 os.makedirs(DATA_FOLDER, exist_ok=True)
 
-
-
 def scrape_years_urls(url: str) -> List[Dict[str,str]]:
     """
     Scrapes the years and corresponding URLs from a given URL.
@@ -214,61 +212,95 @@ def scrape_team_data(url: str):
     
     return stats_dict
 
+def scrape_players_urls(url: str):
+    """
+    Scrapes the URLs of players from a given URL.
+
+    Args:
+        url (str): The URL to scrape the player URLs from.
+
+    Returns:
+        list: A list of player URLs.
+    """
+    url = url.replace('info','teamComp')
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+    except Timeout as e:
+        print(f"Timeout: {e}")
+    except HTTPError as e:
+        print(f"HTTP error: {e}")
+    except RequestException as e:
+        print(f"Request exception: {e}")
+    soup = BeautifulSoup(response.content, 'html.parser')
+    
+    urls_div = soup.select_one('#layout > section > div > div.row.cards')
+    a_tags = soup.select('div.item-team a')
+    players_urls = []
+    if a_tags: 
+        for a_tag in a_tags:
+            link = a_tag['href']
+            player_abs_url = urljoin(SL_BASE_URL, link)
+            players_urls.append(player_abs_url)
+    return players_urls
+   
 #=====================================  Main Script =================================
-# extract the links for each season
+
 years_urls = scrape_years_urls(TEAMS_URL)
 pprint.pprint(years_urls)
 
 i = 1
 for year in years_urls:
-    if i != 1 :
+    if i != 1 : # no stats for season 2024-2025 
         team_urls = scrape_team_url(year['url'])
         # create folders for each year
-        subdirectory = os.path.join(DATA_FOLDER, year['year'])
-        os.makedirs(subdirectory, exist_ok=True)
-        all_teams_data = []
+        # subdirectory = os.path.join(DATA_FOLDER, year['year'])
+        # os.makedirs(subdirectory, exist_ok=True)
+        # all_teams_data = []
+
         for team in team_urls:
-            team_data = scrape_team_data(team['url'])
-            team_data['season'] = year['year']
-            all_teams_data.append(team_data)
-         # Create a DataFrame for the year
+            print(f"{team['name']}'s players urls:")
+            players_urls = scrape_players_urls(team['url'])
+            print(players_urls)
+        #     team_data = scrape_team_data(team['url'])
+        #     team_data['season'] = year['year']
+        #     all_teams_data.append(team_data)
         
-        df = pd.DataFrame(all_teams_data)
-        df.drop_duplicates()
-        # Save the DataFrame to a CSV file
-        print(df)
-        csv_file = os.path.join(subdirectory, f"team_stats_{year['year']}.csv")
-        df.to_csv(csv_file, index=False)
-        print(f"Saved data for {year['year']} to {csv_file}")
+        # df = pd.DataFrame(all_teams_data)
+        # # Save the DataFrame to a CSV file
+        # print(df)
+        # csv_file = os.path.join(subdirectory, f"team_stats_{year['year']}.csv")
+        # df.to_csv(csv_file, index=False)
+        # print(f"Saved data for {year['year']} to {csv_file}")
         
     i += 1
 
 # List to hold DataFrames
-dataframes = []
+# dataframes = []
 
 # Iterate through each year folder in the data folder
-for year_folder in os.listdir(DATA_FOLDER):
-    year_path = os.path.join(DATA_FOLDER, year_folder)
+# for year_folder in os.listdir(DATA_FOLDER):
+#     year_path = os.path.join(DATA_FOLDER, year_folder)
     
-    if os.path.isdir(year_path):
-        # Iterate through each CSV file in the year folder
-        for csv_file in os.listdir(year_path):
-            if csv_file.endswith('.csv'):
-                csv_path = os.path.join(year_path, csv_file)
+#     if os.path.isdir(year_path):
+#         # Iterate through each CSV file in the year folder
+#         for csv_file in os.listdir(year_path):
+#             if csv_file.endswith('.csv'):
+#                 csv_path = os.path.join(year_path, csv_file)
                 
-                # Read the CSV file into a DataFrame
-                df = pd.read_csv(csv_path)
+#                 # Read the CSV file into a DataFrame
+#                 df = pd.read_csv(csv_path)
                 
-                # Append the DataFrame to the list
-                dataframes.append(df)
+#                 # Append the DataFrame to the list
+#                 dataframes.append(df)
 
-# Concatenate all DataFrames into a single DataFrame
-combined_df = pd.concat(dataframes, ignore_index=True)
+# # Concatenate all DataFrames into a single DataFrame
+# combined_df = pd.concat(dataframes, ignore_index=True)
 
-# Define the path for the combined CSV file
-combined_csv_path = os.path.join(DATA_FOLDER, 'combined_team_stats.csv')
+# # Define the path for the combined CSV file
+# combined_csv_path = os.path.join(DATA_FOLDER, 'combined_team_stats.csv')
 
-# Save the combined DataFrame to a CSV file
-combined_df.to_csv(combined_csv_path, index=False)
+# # Save the combined DataFrame to a CSV file
+# combined_df.to_csv(combined_csv_path, index=False)
 
-print(f"Combined CSV saved to {combined_csv_path}")
+# print(f"Combined CSV saved to {combined_csv_path}")
